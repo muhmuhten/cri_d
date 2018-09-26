@@ -1,0 +1,5 @@
+If you need this, you should already know what it's for.
+
+Usage:
+	usmdec -k key -i input -a audio_out -v video_out
+	usmdec i input v---ka- video key audio
