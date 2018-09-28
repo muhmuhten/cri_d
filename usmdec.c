@@ -40,10 +40,21 @@ static void init_mask1(unsigned char *m, uint64_t k) {
 	m[31] = m[29] ^ m[19];
 }
 
+static inline FILE *arg_fdopen(char **s, const char *m) {
+	/* safe: fdopen(-48, m) should just fail */
+	FILE *h = fdopen(*++*s-'0', m);
+	if (!h)
+		err(2, "fdopen %d", **s-'0');
+	return h;
+}
 static inline FILE *arg_open(char ***a, const char *m) {
-	for (FILE *h = fopen(*++*a, m); h;)
-		return h;
-	err(2, "open %s", **a);
+	char *name = *++*a;
+	if (!name)
+		errx(2, "no filename");
+	FILE *h = fopen(name, m);
+	if (!h)
+		err(2, "open %s", name);
+	return h;
 }
 
 int main(int argc, char **argv) {
@@ -59,6 +70,9 @@ int main(int argc, char **argv) {
 			case 'i': in = arg_open(&a, "rb"); break;
 			case 'a': aout = arg_open(&a, "wb"); break;
 			case 'v': vout = arg_open(&a, "wb"); break;
+			case 'I': in = arg_fdopen(&s, "rb"); break;
+			case 'A': aout = arg_fdopen(&s, "wb"); break;
+			case 'V': vout = arg_fdopen(&s, "wb"); break;
 			default: errx(2, "unrecognised option -%c", *s);
 			}
 		}

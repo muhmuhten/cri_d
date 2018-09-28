@@ -2,4 +2,6 @@ If you need this, you should already know what it's for.
 
 Usage:
 	usmdec -k key -i input -a audio_out -v video_out
-	usmdec i input v---ka- video key audio
+	usmdec i input v---k- video_out key
+	usmdec I0A1 < input > audio_out
+	usmdec 4> video_out -I3 a audio_out V4-k key 3< input
