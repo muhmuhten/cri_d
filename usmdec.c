@@ -59,7 +59,6 @@ static inline FILE *arg_open(char ***a, const char *m) {
 
 int main(int argc, char **argv) {
 	uint64_t keynum = 5423778438;
-	uint64_t video_mask1[4], video_mask2[4], audio_mask1[4];
 	FILE *in = 0, *aout = 0, *vout = 0;
 
 	for (char **a = argv+1; *a; a++) {
@@ -80,6 +79,7 @@ int main(int argc, char **argv) {
 	if (!in)
 		errx(2, "no input");
 
+	uint64_t video_mask1[4], video_mask2[4], audio_mask1[4];
 	init_mask1((unsigned char *)video_mask1, keynum);
 	for (int j = 0; j < 4; j++) {
 		uint64_t w = ~video_mask1[j];
@@ -91,7 +91,10 @@ int main(int argc, char **argv) {
 		audio_mask1[j] = *(uint64_t *)c;
 	}
 
-	char *buf = 0;
+	/* aligned 64k buffer */
+	uint64_t stack_buf[8192];
+	size_t buf_len = sizeof stack_buf;
+	char *buf = (char *)stack_buf;
 	for (;;) {
 		uint32_t magic = 0;
 		if (fread(&magic, 4, 1, in) == 0)
@@ -115,9 +118,14 @@ int main(int argc, char **argv) {
 			err(1, "short read len");
 		len = htonl(len);
 
-		/* need (len+7) & ~7 for 64-bit */
-		if (!(buf = realloc(buf, len+8)))
-			err(1, "realloc %u", len);
+		if (len >= buf_len) {
+			while (len >= buf_len)
+				buf_len <<= 1;
+			if (buf != (char *)stack_buf)
+				free(buf);
+			if (!(buf = malloc(buf_len)))
+				err(1, "malloc %zu for %u", buf_len, len);
+		}
 		if (fread(buf, 1, len, in) != len)
 			err(1, "short read data");
 
